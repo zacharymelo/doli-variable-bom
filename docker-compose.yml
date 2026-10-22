@@ -1,0 +1,48 @@
+# Development stack: Dolibarr 24.0 with the hook processBOMLines applied, and the module mounted.
+# Usage: docker compose up -d, then http://localhost:8080 (admin / admin)
+services:
+  db:
+    image: mariadb:10.11
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: dolibarr_root
+      MYSQL_DATABASE: dolibarr
+      MYSQL_USER: dolibarr
+      MYSQL_PASSWORD: dolibarr
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  dolibarr:
+    image: dolibarr/dolibarr:24.0.0
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:80"
+    environment:
+      DOLI_DB_HOST: db
+      DOLI_DB_NAME: dolibarr
+      DOLI_DB_USER: dolibarr
+      DOLI_DB_PASSWORD: dolibarr
+      DOLI_ADMIN_LOGIN: admin
+      DOLI_ADMIN_PASSWORD: admin
+      DOLI_URL_ROOT: "http://localhost:8080"
+      DOLI_PROD: 0
+    # Add the hook processBOMLines to the core (idempotent) before starting Apache
+    command: ["sh", "-c", "php /var/www/core-patch/apply_hook.php /var/www/html && exec apache2-foreground"]
+    volumes:
+      - dolibarr_html:/var/www/html
+      - dolibarr_docs:/var/www/documents
+      - ./module:/var/www/html/custom/variablebom
+      - ./core-patch:/var/www/core-patch:ro
+
+volumes:
+  db_data:
+  dolibarr_html:
+  dolibarr_docs:

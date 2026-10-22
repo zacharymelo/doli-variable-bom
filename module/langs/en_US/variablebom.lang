@@ -1,0 +1,59 @@
+# Copyright (C) 2026 Zach Melo <zach@digitalproperties.works>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# Module
+Module194281Name = Variable BOM
+Module194281Desc = One BOM for all the variants of a product, resolved for each variant to produce
+VariableBom = Variable BOM
+VariableBomSetup = Variable BOM setup
+VariableBomSetupDesc = A variable BOM is a BOM of a parent product with variants. Its lines flagged "Matched to variant" use a parent product with variants, and the variant consumed is resolved from the variant to produce.
+VariableBomTab = Variants
+
+# Core hook
+VariableBomCoreHook = Hook processBOMLines of Dolibarr core
+VariableBomCoreHookOk = Available
+VariableBomCoreHookDesc = Needed to resolve the lines of a manufacturing order. Proposed to Dolibarr; until it is merged, apply the patch provided with the module (core-patch directory).
+ErrorVariableBomCoreHookMissing = Your Dolibarr version does not have the hook processBOMLines needed by the Variable BOM module: manufacturing orders of variable BOMs are refused. Apply the core patch provided with the module.
+
+# BOM
+VariableBomNbVariants = Yes, for %s variants
+VariableBomNotVariable = This BOM is not a variable BOM: its product to produce has no variants.
+VariableBomLineMatch = Matched to variant
+VariableBomLineMatchHelp = The product of the line is a parent product with variants. When a manufacturing order is created, the variant consumed is the one having the same attribute values as the variant to produce (or the fixed values defined in the variant rules of the line).
+VariableBomLines = Lines of the BOM (for %s variants to produce)
+VariableBomRules = Variant rules
+VariableBomRulesOfLine = Variant rules of line
+VariableBomRulesSaved = Variant rules saved
+VariableBomResolution = Resolution
+VariableBomResolvedCount = Resolved for %s of %s variants
+VariableBomComponentAttributes = Attributes of the component
+VariableBomComponentAttributesHelp = For each attribute of the component, choose whether its value follows the variant to produce or is always the same value.
+VariableBomSameAsProduced = Same as variant to produce
+VariableBomChooseValue = Choose a value (attribute not on the product to produce)
+VariableBomQtyByVariant = Quantity by variant
+VariableBomQtyAttribute = Quantity varies by
+VariableBomQtyNone = Same quantity for all variants
+VariableBomQtyHelp = Leave empty to use the quantity of the line (%s). Use 0 if the line is not used for this value.
+VariableBomQtySummary = Qty by %s: %s
+VariableBomPreview = Result for each variant to produce
+VariableBomNotUsed = Not used
+
+# MO
+VariableBomVariantToProduce = Variant to produce
+VariableBomSelectVariant = Select the variant to produce to see the components that will be consumed.
+
+# Errors
+ErrorVariableBomMatchNeedsVariableBom = A line can be matched to variant only if the product to produce of the BOM has variants.
+ErrorVariableBomMatchNeedsVariantParent = A line can be matched to variant only if its product is a parent product with variants.
+ErrorVariableBomVariantToProduceRequired = This BOM is a variable BOM: the product to produce must be a variant of %s.
+ErrorVariableBomAttributeNotDefined = Component %s: no value for attribute(s) %s. Set a fixed value in the variant rules of the line.
+ErrorVariableBomNoVariantFound = Component %s: no variant exists for %s.
+ErrorVariableBomNoVariantForValues = No variant of %s exists for the selected values.
+
+# Debug
+DebugMode = Debug Mode
+DebugModeDesc = When enabled, exposes a diagnostic endpoint at /custom/variablebom/ajax/debug.php for troubleshooting (module status, core hook, resolution of a BOM).
