@@ -40,7 +40,7 @@ the wrong products. The module's setup page tells you whether the hook is presen
 
 ### Step 2: install and enable the module
 
-Home > Setup > Modules/Applications > **Deploy/install external app/module**, and upload `variablebom-1.0.0.zip`
+Home > Setup > Modules/Applications > **Deploy/install external app/module**, and upload `variablebom-1.1.0.zip`
 (or copy the `module` folder to `htdocs/custom/variablebom`). Then enable **Variable BOM** in the module list.
 
 Open its setup page (the gear icon next to the module). It shows **How to use** and whether the hook is available:
