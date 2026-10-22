@@ -1,5 +1,5 @@
-From 495ddb1c92f33ac1ca0ea0a3d86542906106b369 Mon Sep 17 00:00:00 2001
-From: Zachary Melo <zacharymelo@gmail.com>
+From 013fa8461e0468df9e2d72908752da761aa50c8e Mon Sep 17 00:00:00 2001
+From: Zachary Melo <contact@zachmelo.com>
 Date: Wed, 21 Oct 2026 21:53:43 -0400
 Subject: [PATCH] NEW Hook processBOMLines to let a module change the BOM lines
  used by a MO
