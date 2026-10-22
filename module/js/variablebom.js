@@ -94,6 +94,25 @@ jQuery(function ($) {
 		$('#fk_bom').trigger('change.select2');
 	}
 
+	// Variants tab of a BOM: fold / unfold the result of a line for each variant to produce
+	function setFolded($line, folded) {
+		$('.variablebom_sub[data-parent="' + $line.data('line') + '"]').toggle(!folded);
+		$line.find('.variablebom_fold_closed').toggle(folded);
+		$line.find('.variablebom_fold_open').toggle(!folded);
+	}
+	$('.variablebom_fold').on('click', function (e) {
+		e.preventDefault();
+		setFolded($(this), $(this).find('.variablebom_fold_open').is(':visible'));
+	});
+	$('.variablebom_showall').on('click', function (e) {
+		e.preventDefault();
+		$('.variablebom_fold').each(function () { setFolded($(this), false); });
+	});
+	$('.variablebom_hideall').on('click', function (e) {
+		e.preventDefault();
+		$('.variablebom_fold').each(function () { setFolded($(this), true); });
+	});
+
 	$('select.variablebom_qtyattr').on('change', function () {
 		$('.variablebom_qty').hide();
 		$('.variablebom_qty_' + $(this).val()).show();

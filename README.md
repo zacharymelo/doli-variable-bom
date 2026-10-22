@@ -71,8 +71,10 @@ The module refuses to tick a line whose product has no variants, or on a BOM who
 
 ### 2.3 Open the Variants tab and complete the rules
 
-The **Variants** tab lists every line with its rules and, for matched lines, a **Resolution** count: for how many of the
-variants to produce the component can be found. Click the pencil at the end of a row to edit its rules.
+The **Variants** tab lists every line with its rules and a **Resolution** badge: green `6 / 6` when the line can be
+resolved for every variant to produce, orange when some cannot. The folder icon in front of a line unfolds what that line
+becomes for each variant (the links above the table unfold or fold them all). Click the pencil at the end of a row to
+edit the line's rules in place, with Save and Cancel right there, like a document line.
 
 ![Variants tab](docs/variants-tab.jpg)
 
@@ -86,10 +88,10 @@ For each line you can set:
   quantity for each of its values. Empty means the line's own quantity; **0 means the line is not used** for that value.
   To use a line for some sizes only, set its quantity to 0 on the BOM card and enter a quantity for those sizes here.
 
-The table at the bottom, **Result for each variant to produce**, shows exactly what the line becomes for every variant.
-Check it before validating the BOM.
+While a line is being edited, its results for every variant stay unfolded under it, so you can check the effect of the
+rules right after saving.
 
-![Rules of a line and preview](docs/variants-tab-rules.jpg)
+![Editing the rules of a line in place](docs/variants-tab-rules.jpg)
 
 Every line should reach "Resolved for N of N variants" before you create orders. If one does not, open its rules: an
 attribute needs a fixed value, or the component does not exist in that variant.

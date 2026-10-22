@@ -21,13 +21,13 @@ VariableBomHowTo4 = Validate the BOM and click "Create MO". Choose the variant t
 VariableBomHowTo5 = The hook of the core (see below) must be available, otherwise manufacturing orders of variable BOMs are refused.
 VariableBomTabIntro = This BOM produces a product with variants. Each manufacturing order produces one variant; this tab defines how the lines are adapted to it:
 VariableBomTabStep1 = A line "Matched to variant" (ticked on the BOM card) consumes the variant of its component with the same attribute values as the variant produced.
-VariableBomTabStep2 = For an attribute of the component that the produced product does not have, set a fixed value in the rules of the line (pencil).
+VariableBomTabStep2 = For an attribute of the component that the produced product does not have, set a fixed value in the rules of the line (pencil at the end of the row).
 VariableBomTabStep3 = The quantity of any line can depend on one attribute of the variant produced (0 = the line is not used for that value).
-VariableBomTabStep4 = "Resolution" tells for how many variants the line can be resolved. All lines must reach all variants before creating manufacturing orders.
-VariableBomRulesHelp = Fixed attribute values and quantities by variant defined for the line. Click the pencil at the end of the row to edit them.
-VariableBomResolutionHelp = Number of variants to produce for which the component of this line can be found. If some are missing, open the rules of the line: an attribute may need a fixed value, or the component may not exist in that variant.
+VariableBomTabStep4 = "Resolution" tells for how many variants the line can be resolved, and the folder icon unfolds the result for each one. All lines must reach all variants before creating manufacturing orders.
+VariableBomRulesHelp = Fixed attribute values and quantities by variant defined for the line. Click the pencil at the end of the row to edit them in place.
+VariableBomResolutionHelp = Variants to produce for which this line can be resolved, out of all of them. Orange means some cannot: unfold the line (folder icon) to see which, then edit its rules; an attribute may need a fixed value, or the component may not exist in that variant.
 VariableBomQtyByVariantHelp = Choose the attribute of the produced product that changes the quantity, then enter a quantity for each of its values. Empty = the quantity of the line, 0 = the line is not used for that value.
-VariableBomPreviewHelp = What this line becomes for each variant of the product to produce, with the rules above. Check it before validating the BOM.
+VariableBomPreviewHelp = Show what this line becomes for each variant of the product to produce. Check it before validating the BOM.
 VariableBomLineNotMatchedNote = This line is not matched to variant: the same product is consumed for every variant, only its quantity can change. To consume a variant of it instead, edit the line on the BOM card and tick "Matched to variant".
 VariableBomVariantToProduceHelp = Choose one value for each attribute. The product to produce is set automatically, and the components that will be consumed are listed below.
 VariableBomSuffix = (Variable BOM)
@@ -59,6 +59,8 @@ VariableBomQtyNone = Same quantity for all variants
 VariableBomQtyHelp = Leave empty to use the quantity of the line (%s). Use 0 if the line is not used for this value.
 VariableBomQtySummary = Qty by %s: %s
 VariableBomPreview = Result for each variant to produce
+VariableBomShowAllResults = Show the results of every line
+VariableBomHideAllResults = Hide the results
 VariableBomNotUsed = Not used
 
 # MO

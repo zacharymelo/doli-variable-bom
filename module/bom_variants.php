@@ -118,12 +118,13 @@ if (empty($reshook)) {
 		$qtyattrid = GETPOSTINT('qty_attr');
 		if ($qtyattrid > 0 && isset($producedattributes[$qtyattrid])) {
 			foreach (array_keys($producedattributes[$qtyattrid]['values']) as $valid) {
-				$qty = GETPOST('qty_'.$qtyattrid.'_'.$valid, 'alpha');
+				$qty = trim(GETPOST('qty_'.$qtyattrid.'_'.$valid, 'alpha'));
 				if ($qty === '') {
 					continue;
 				}
+				$isnumber = (bool) preg_match('/^[0-9\s.,]+$/', $qty);	// price2num() turns any text into 0, so check the input first
 				$qty = price2num($qty, 'MS');
-				if (!is_numeric($qty) || $qty < 0) {
+				if (!$isnumber || !is_numeric($qty) || $qty < 0) {
 					$error++;
 					setEventMessages($langs->trans('ErrorFieldFormat', $langs->transnoentitiesnoconv('Qty')), null, 'errors');
 					break;
@@ -161,11 +162,15 @@ if (empty($reshook)) {
 			if (!$error) {
 				$db->commit();
 				setEventMessages($langs->trans('VariableBomRulesSaved'), null, 'mesgs');
-				header('Location: '.$_SERVER['PHP_SELF'].'?id='.$object->id.'&lineid='.$line->id);
+				header('Location: '.$backtotab);
 				exit;
 			} else {
 				$db->rollback();
 			}
+		}
+
+		if ($action == 'save' && $error) {
+			$action = 'editline';	// Show the line in edit mode again, with the values entered
 		}
 	}
 }
@@ -208,22 +213,27 @@ foreach (array('VariableBomTabStep1', 'VariableBomTabStep2', 'VariableBomTabStep
 }
 print '</ol>';
 
-// Load in one request the products of the lines and of the variants to produce, to show them
+// Resolve every line for every variant to produce. $results[lineid][variantid] = resolved line, null (line not used) or error string
+$variants = $resolver->getVariantCombinations($object->fk_product);
+$results = array();
 $productids = array();
 foreach ($object->lines as $tmpline) {
 	$productids[(int) $tmpline->fk_product] = (int) $tmpline->fk_product;
-}
-$results = array();
-if (is_object($line)) {
-	foreach (array_keys($resolver->getVariantCombinations($object->fk_product)) as $fk_product_variant) {
-		$resolvedlines = $resolver->getLinesForVariant($object, $fk_product_variant, $line->id);
-		$results[$fk_product_variant] = (is_array($resolvedlines) ? reset($resolvedlines) : implode(' ', $resolver->errors));
+	foreach (array_keys($variants) as $fk_product_variant) {
 		$productids[$fk_product_variant] = $fk_product_variant;
-		if (is_object($results[$fk_product_variant])) {
-			$productids[$results[$fk_product_variant]->fk_product] = $results[$fk_product_variant]->fk_product;
+		$resolvedlines = $resolver->getLinesForVariant($object, $fk_product_variant, $tmpline->id);
+		if (!is_array($resolvedlines)) {
+			$results[$tmpline->id][$fk_product_variant] = implode(' ', $resolver->errors);
+		} elseif (empty($resolvedlines)) {
+			$results[$tmpline->id][$fk_product_variant] = null;
+		} else {
+			$results[$tmpline->id][$fk_product_variant] = reset($resolvedlines);
+			$productids[(int) $results[$tmpline->id][$fk_product_variant]->fk_product] = (int) $results[$tmpline->id][$fk_product_variant]->fk_product;
 		}
 	}
 }
+
+// Load in one request the products to show
 $products = array();
 $sql = "SELECT p.rowid, p.ref, p.label, p.fk_product_type, p.entity, p.tosell, p.tobuy";
 $sql .= " FROM ".$db->prefix()."product as p";
@@ -246,153 +256,148 @@ if ($resql) {
 } else {
 	dol_print_error($db);
 }
+// Variants to produce, sorted on ref
+$variantids = array();
+foreach (array_keys($products) as $tmpid) {
+	if (isset($variants[$tmpid])) {
+		$variantids[] = $tmpid;
+	}
+}
 
-// Lines of the BOM with their rules
-print load_fiche_titre($langs->trans('VariableBomLines', count($resolver->getVariantCombinations($object->fk_product))), '', '');
+$morehtmlright = '<a href="#" class="variablebom_showall">'.img_picto('', 'folder-open', 'class="paddingright"').$langs->trans('VariableBomShowAllResults').'</a>';
+$morehtmlright .= ' &nbsp; <a href="#" class="variablebom_hideall">'.img_picto('', 'folder', 'class="paddingright"').$langs->trans('VariableBomHideAllResults').'</a>';
+print load_fiche_titre($langs->trans('VariableBomLines', count($variants)), $morehtmlright, '');
 
 print '<div class="div-table-responsive-no-min">';
-print '<table class="noborder centpercent">';
+print '<table class="noborder centpercent" id="variablebom_lines">';
 print '<tr class="liste_titre">';
 print '<td>'.$langs->trans('Product').'</td>';
 print '<td class="right">'.$langs->trans('Qty').'</td>';
 print '<td class="center">'.$form->textwithpicto($langs->trans('VariableBomLineMatch'), $langs->trans('VariableBomLineMatchHelp')).'</td>';
 print '<td>'.$form->textwithpicto($langs->trans('VariableBomRules'), $langs->trans('VariableBomRulesHelp')).'</td>';
-print '<td>'.$form->textwithpicto($langs->trans('VariableBomResolution'), $langs->trans('VariableBomResolutionHelp')).'</td>';
+print '<td class="center">'.$form->textwithpicto($langs->trans('VariableBomResolution'), $langs->trans('VariableBomResolutionHelp')).'</td>';
 print '<td></td>';
 print '</tr>';
+
 foreach ($object->lines as $tmpline) {
 	$tmpproduct = (empty($products[$tmpline->fk_product]) ? null : $products[$tmpline->fk_product]);
-	print '<tr class="oddeven'.((is_object($line) && $line->id == $tmpline->id) ? ' highlight' : '').'">';
-	print '<td class="tdoverflowmax300">'.(is_object($tmpproduct) ? $tmpproduct->getNomUrl(1).' - '.dolPrintLabel($tmpproduct->label) : '').'</td>';
-	print '<td class="right">'.price($tmpline->qty, 0, '', 0, 0).'</td>';
-	print '<td class="center">'.(empty($matchedlineids[$tmpline->id]) ? '' : yn(1)).'</td>';
-	print '<td class="small">'.variablebomLineRulesSummary($resolver, $object, $tmpline).'</td>';
-	print '<td class="small">';
-	if (!empty($matchedlineids[$tmpline->id])) {
-		list($nbok, $nbvariants) = variablebomLineResolvedCount($resolver, $object, $tmpline);
-		$text = $langs->trans('VariableBomResolvedCount', $nbok, $nbvariants);
-		print ($nbok < $nbvariants ? img_warning($text).' <span class="warning">'.$text.'</span>' : '<span class="opacitymedium">'.$text.'</span>');
-	}
-	print '</td>';
-	print '<td class="right"><a class="editfielda" href="'.$_SERVER['PHP_SELF'].'?id='.$object->id.'&lineid='.$tmpline->id.'">';
-	print img_picto($langs->trans('VariableBomRules'), $permissiontoadd ? 'edit' : 'eye');
-	print '</a></td>';
-	print '</tr>';
-}
-print '</table>';
-print '</div>';
+	$ismatched = !empty($matchedlineids[$tmpline->id]);
+	$isedit = ($action == 'editline' && $permissiontoadd && is_object($line) && $line->id == $tmpline->id);
 
-if (!is_object($line)) {
-	llxFooter();
-	$db->close();
-	exit;
-}
-
-// Rules of the selected line
-$component = $products[$line->fk_product];
-$currentfixedvalues = array();
-$currentqtys = array();
-$currentqtyattrid = 0;
-foreach ($resolver->getRulesOfLine($object, $line->id) as $rule) {
-	if ($rule->rule_type == VariableBomRule::RULE_FIXEDVALUE) {
-		$currentfixedvalues[$rule->fk_prod_attr] = $rule->fk_prod_attr_val;
-	} elseif ($rule->rule_type == VariableBomRule::RULE_QTY) {
-		$currentqtyattrid = $rule->fk_prod_attr;
-		$currentqtys[$rule->fk_prod_attr][$rule->fk_prod_attr_val] = $rule->qty;
-	}
-}
-if (GETPOSTISSET('qty_attr')) {
-	$currentqtyattrid = GETPOSTINT('qty_attr');
-}
-$disabled = ($permissiontoadd ? '' : ' disabled="disabled"');
-
-print '<br>';
-print load_fiche_titre($langs->trans('VariableBomRulesOfLine').' '.$component->getNomUrl(1).' - '.dolPrintLabel($component->label), '', '');
-
-print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'">';
-print '<input type="hidden" name="token" value="'.newToken().'">';
-print '<input type="hidden" name="action" value="save">';
-print '<input type="hidden" name="id" value="'.$object->id.'">';
-print '<input type="hidden" name="lineid" value="'.$line->id.'">';
-
-// Attributes of the component
-if (!empty($matchedlineids[$line->id])) {
-	print '<div class="div-table-responsive-no-min">';
-	print '<table class="noborder centpercent">';
-	print '<tr class="liste_titre"><td class="titlefieldmiddle">'.$form->textwithpicto($langs->trans('VariableBomComponentAttributes'), $langs->trans('VariableBomComponentAttributesHelp')).'</td><td>'.$langs->trans('Value').'</td></tr>';
-	foreach ($componentattributes as $attrid => $attribute) {
-		$isshared = isset($producedattributes[$attrid]);
-		$selected = (GETPOSTISSET('fixedvalue_'.$attrid) ? GETPOSTINT('fixedvalue_'.$attrid) : (empty($currentfixedvalues[$attrid]) ? 0 : $currentfixedvalues[$attrid]));
-
-		print '<tr class="oddeven"><td>'.dolPrintLabel($attribute['label']).'</td><td>';
-		$options = array(0 => ($isshared ? $langs->trans('VariableBomSameAsProduced') : $langs->trans('VariableBomChooseValue')));
-		$options += $attribute['values'];
-		print $form->selectarray('fixedvalue_'.$attrid, $options, $selected, 0, 0, 0, '', 0, 0, ($permissiontoadd ? 0 : 1), '', 'minwidth200');
-		if (!$isshared && empty($selected)) {
-			print ' '.img_warning($langs->trans('ErrorVariableBomAttributeNotDefined', $component->ref, $attribute['label']));
+	$nbok = 0;
+	foreach ($results[$tmpline->id] as $result) {
+		if (!is_string($result)) {
+			$nbok++;
 		}
-		print '</td></tr>';
 	}
-	print '</table>';
-	print '</div>';
-	print '<br>';
-}
+	$badge = dolGetBadge($nbok.' / '.count($variants), '', ($nbok < count($variants) ? 'warning' : 'success'));
 
-if (empty($matchedlineids[$line->id])) {
-	print '<div class="opacitymedium">'.$langs->trans('VariableBomLineNotMatchedNote').'</div><br>';
-}
+	// Toggle of the results of the line
+	$fold = '<a href="#" class="variablebom_fold" data-line="'.((int) $tmpline->id).'" title="'.dolPrintHTMLForAttribute($langs->trans('VariableBomPreviewHelp')).'">';
+	$fold .= '<span class="variablebom_fold_closed"'.($isedit ? ' style="display: none"' : '').'>'.img_picto('', 'folder', 'class="paddingright"').'</span>';
+	$fold .= '<span class="variablebom_fold_open"'.($isedit ? '' : ' style="display: none"').'>'.img_picto('', 'folder-open', 'class="paddingright"').'</span>';
+	$fold .= '</a>';
 
-// Quantity by variant
-print '<div class="div-table-responsive-no-min">';
-print '<table class="noborder centpercent">';
-print '<tr class="liste_titre"><td class="titlefieldmiddle">'.$form->textwithpicto($langs->trans('VariableBomQtyByVariant'), $langs->trans('VariableBomQtyByVariantHelp')).'</td><td>';
-$options = array(0 => $langs->trans('VariableBomQtyNone'));
-foreach ($producedattributes as $attrid => $attribute) {
-	$options[$attrid] = $langs->trans('VariableBomQtyAttribute').' '.$attribute['label'];
-}
-print $form->selectarray('qty_attr', $options, $currentqtyattrid, 0, 0, 0, '', 0, 0, ($permissiontoadd ? 0 : 1), '', 'minwidth200 variablebom_qtyattr');
-print '</td></tr>';
-foreach ($producedattributes as $attrid => $attribute) {
-	foreach ($attribute['values'] as $valid => $vallabel) {
-		$value = (GETPOSTISSET('qty_'.$attrid.'_'.$valid) ? GETPOST('qty_'.$attrid.'_'.$valid, 'alpha') : (isset($currentqtys[$attrid][$valid]) ? price($currentqtys[$attrid][$valid], 0, '', 0, 0) : ''));
-		print '<tr class="oddeven variablebom_qty variablebom_qty_'.$attrid.'"'.($attrid == $currentqtyattrid ? '' : ' style="display: none"').'>';
-		print '<td>'.dolPrintLabel($attribute['label'].': '.$vallabel).'</td>';
-		print '<td><input type="text" class="flat right width75" name="qty_'.$attrid.'_'.$valid.'" value="'.dolPrintHTMLForAttribute($value).'" placeholder="'.dolPrintHTMLForAttribute(price($line->qty, 0, '', 0, 0)).'"'.$disabled.'></td>';
+	if ($isedit) {
+		// The line is edited in place: its rules, then Save / Cancel
+		$componentattributes = ($ismatched ? $resolver->getVariantAttributes($tmpline->fk_product) : array());
+		$currentfixedvalues = array();
+		$currentqtys = array();
+		$currentqtyattrid = 0;
+		foreach ($resolver->getRulesOfLine($object, $tmpline->id) as $rule) {
+			if ($rule->rule_type == VariableBomRule::RULE_FIXEDVALUE) {
+				$currentfixedvalues[$rule->fk_prod_attr] = $rule->fk_prod_attr_val;
+			} elseif ($rule->rule_type == VariableBomRule::RULE_QTY) {
+				$currentqtyattrid = $rule->fk_prod_attr;
+				$currentqtys[$rule->fk_prod_attr][$rule->fk_prod_attr_val] = $rule->qty;
+			}
+		}
+		if (GETPOSTISSET('qty_attr')) {
+			$currentqtyattrid = GETPOSTINT('qty_attr');
+		}
+
+		print '<tr class="oddeven tredited" id="variablebom_line_'.((int) $tmpline->id).'"><td colspan="6">';
+		print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'">';
+		print '<input type="hidden" name="token" value="'.newToken().'">';
+		print '<input type="hidden" name="action" value="save">';
+		print '<input type="hidden" name="id" value="'.$object->id.'">';
+		print '<input type="hidden" name="lineid" value="'.$tmpline->id.'">';
+
+		print '<div class="paddingtop paddingbottom">'.$fold.(is_object($tmpproduct) ? $tmpproduct->getNomUrl(1).' - '.dolPrintLabel($tmpproduct->label) : '').'</div>';
+
+		if ($ismatched) {
+			print '<table class="noborder centpercent">';
+			print '<tr class="liste_titre"><td class="titlefieldmiddle">'.$form->textwithpicto($langs->trans('VariableBomComponentAttributes'), $langs->trans('VariableBomComponentAttributesHelp')).'</td><td>'.$langs->trans('Value').'</td></tr>';
+			foreach ($componentattributes as $attrid => $attribute) {
+				$isshared = isset($producedattributes[$attrid]);
+				$selected = (GETPOSTISSET('fixedvalue_'.$attrid) ? GETPOSTINT('fixedvalue_'.$attrid) : (empty($currentfixedvalues[$attrid]) ? 0 : $currentfixedvalues[$attrid]));
+				print '<tr class="oddeven"><td>'.dolPrintLabel($attribute['label']).'</td><td>';
+				$options = array(0 => ($isshared ? $langs->trans('VariableBomSameAsProduced') : $langs->trans('VariableBomChooseValue')));
+				$options += $attribute['values'];
+				print $form->selectarray('fixedvalue_'.$attrid, $options, $selected, 0, 0, 0, '', 0, 0, 0, '', 'minwidth200');
+				if (!$isshared && empty($selected)) {
+					print ' '.img_warning($langs->trans('ErrorVariableBomAttributeNotDefined', (is_object($tmpproduct) ? $tmpproduct->ref : ''), $attribute['label']));
+				}
+				print '</td></tr>';
+			}
+			print '</table>';
+		} else {
+			print '<div class="opacitymedium paddingbottom">'.$langs->trans('VariableBomLineNotMatchedNote').'</div>';
+		}
+
+		print '<table class="noborder centpercent">';
+		print '<tr class="liste_titre"><td class="titlefieldmiddle">'.$form->textwithpicto($langs->trans('VariableBomQtyByVariant'), $langs->trans('VariableBomQtyByVariantHelp')).'</td><td>';
+		$options = array(0 => $langs->trans('VariableBomQtyNone'));
+		foreach ($producedattributes as $attrid => $attribute) {
+			$options[$attrid] = $langs->trans('VariableBomQtyAttribute').' '.$attribute['label'];
+		}
+		print $form->selectarray('qty_attr', $options, $currentqtyattrid, 0, 0, 0, '', 0, 0, 0, '', 'minwidth200 variablebom_qtyattr');
+		print '</td></tr>';
+		foreach ($producedattributes as $attrid => $attribute) {
+			foreach ($attribute['values'] as $valid => $vallabel) {
+				$value = (GETPOSTISSET('qty_'.$attrid.'_'.$valid) ? GETPOST('qty_'.$attrid.'_'.$valid, 'alpha') : (isset($currentqtys[$attrid][$valid]) ? price($currentqtys[$attrid][$valid], 0, '', 0, 0) : ''));
+				print '<tr class="oddeven variablebom_qty variablebom_qty_'.$attrid.'"'.($attrid == $currentqtyattrid ? '' : ' style="display: none"').'>';
+				print '<td>'.dolPrintLabel($attribute['label'].': '.$vallabel).'</td>';
+				print '<td><input type="text" class="flat right width75" name="qty_'.$attrid.'_'.$valid.'" value="'.dolPrintHTMLForAttribute($value).'" placeholder="'.dolPrintHTMLForAttribute(price($tmpline->qty, 0, '', 0, 0)).'"></td>';
+				print '</tr>';
+			}
+		}
+		print '<tr class="oddeven variablebom_qty_help"'.($currentqtyattrid > 0 ? '' : ' style="display: none"').'><td colspan="2"><span class="opacitymedium">'.$langs->trans('VariableBomQtyHelp', price($tmpline->qty, 0, '', 0, 0)).'</span></td></tr>';
+		print '</table>';
+
+		print $form->buttonsSaveCancel('Save', 'Cancel');
+		print '</form>';
+		print '</td></tr>';
+	} else {
+		print '<tr class="oddeven" id="variablebom_line_'.((int) $tmpline->id).'">';
+		print '<td class="tdoverflowmax300">'.$fold.(is_object($tmpproduct) ? $tmpproduct->getNomUrl(1).' - '.dolPrintLabel($tmpproduct->label) : '').'</td>';
+		print '<td class="right">'.price($tmpline->qty, 0, '', 0, 0).'</td>';
+		print '<td class="center">'.($ismatched ? yn(1) : '').'</td>';
+		print '<td class="small">'.variablebomLineRulesSummary($resolver, $object, $tmpline).'</td>';
+		print '<td class="center">'.$badge.'</td>';
+		print '<td class="center nowraponall">';
+		if ($permissiontoadd) {
+			print '<a class="editfielda" href="'.$_SERVER['PHP_SELF'].'?id='.$object->id.'&action=editline&token='.newToken().'&lineid='.$tmpline->id.'">'.img_edit().'</a>';
+		}
+		print '</td>';
 		print '</tr>';
 	}
-}
-print '<tr class="oddeven variablebom_qty_help"'.($currentqtyattrid > 0 ? '' : ' style="display: none"').'><td colspan="2"><span class="opacitymedium">'.$langs->trans('VariableBomQtyHelp', price($line->qty, 0, '', 0, 0)).'</span></td></tr>';
-print '</table>';
-print '</div>';
 
-if ($permissiontoadd) {
-	print $form->buttonsSaveCancel('Save', 'Cancel');
-}
-
-print '</form>';
-
-// Result for each variant to produce
-print '<br>';
-print load_fiche_titre($form->textwithpicto($langs->trans('VariableBomPreview'), $langs->trans('VariableBomPreviewHelp')), '', '');
-
-print '<div class="div-table-responsive-no-min">';
-print '<table class="noborder centpercent">';
-print '<tr class="liste_titre"><td>'.$langs->trans('VariableBomVariantToProduce').'</td><td>'.$langs->trans('Product').'</td><td class="right">'.$langs->trans('Qty').'</td></tr>';
-foreach ($products as $fk_product_variant => $variantproduct) {
-	if (!array_key_exists($fk_product_variant, $results)) {
-		continue;	// Not a variant to produce
+	// Result of the line for each variant to produce (folded unless the line is edited)
+	foreach ($variantids as $fk_product_variant) {
+		$result = $results[$tmpline->id][$fk_product_variant];
+		print '<tr class="oddeven variablebom_sub" data-parent="'.((int) $tmpline->id).'"'.($isedit ? '' : ' style="display: none"').'>';
+		print '<td class="tdoverflowmax300" style="padding-left: 5%">'.img_picto('', 'rightarrow', 'class="paddingright opacitymedium"').$products[$fk_product_variant]->getNomUrl(1).'</td>';
+		if (is_string($result)) {
+			print '<td></td><td colspan="4">'.img_warning().' <span class="warning">'.dolPrintLabel($result).'</span></td>';
+		} elseif (empty($result) || empty($products[$result->fk_product])) {
+			print '<td></td><td colspan="4" class="opacitymedium">'.$langs->trans('VariableBomNotUsed').'</td>';
+		} else {
+			print '<td class="right">'.price($result->qty, 0, '', 0, 0).'</td>';
+			print '<td colspan="4">'.$products[$result->fk_product]->getNomUrl(1).' - '.dolPrintLabel($products[$result->fk_product]->label).'</td>';
+		}
+		print '</tr>';
 	}
-	$result = $results[$fk_product_variant];
-	print '<tr class="oddeven"><td class="tdoverflowmax300">'.$variantproduct->getNomUrl(1).'</td>';
-	if (is_string($result)) {
-		print '<td colspan="2">'.img_warning().' <span class="warning">'.dolPrintLabel($result).'</span></td>';
-	} elseif (empty($result) || empty($products[$result->fk_product])) {
-		print '<td class="opacitymedium">'.$langs->trans('VariableBomNotUsed').'</td><td></td>';
-	} else {
-		print '<td class="tdoverflowmax300">'.$products[$result->fk_product]->getNomUrl(1).' - '.dolPrintLabel($products[$result->fk_product]->label).'</td>';
-		print '<td class="right">'.price($result->qty, 0, '', 0, 0).'</td>';
-	}
-	print '</tr>';
 }
 print '</table>';
 print '</div>';
