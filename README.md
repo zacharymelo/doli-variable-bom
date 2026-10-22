@@ -33,7 +33,15 @@ Typical case: a screen-printed T-shirt sold in every Size × Color. One BOM of t
 
 ## Installation
 
-1. Add the hook to the core (once, and again after each Dolibarr upgrade until it is merged upstream):
+1. Add the hook to the core (once, and again after each Dolibarr upgrade until it is merged upstream). Two ways:
+
+   **Without the command line: replace one file.** Find your exact Dolibarr version in Home > Setup > Other setup >
+   About (or the bottom of any page) and take the file for that version from `core-patch/full-file/<version>/`. On the
+   server, rename your `htdocs/mrp/class/mo.class.php` to `mo.class.php.orig` (that is your backup), then copy the
+   file from the module to the same place. Only use the file of your exact version; for a version that is not listed,
+   use the script below or ask for the file to be generated.
+
+   **With the command line: run the script.** It checks the code before changing anything and works on any 24.0.x:
    ```bash
    php core-patch/apply_hook.php /path/to/dolibarr/htdocs
    ```
