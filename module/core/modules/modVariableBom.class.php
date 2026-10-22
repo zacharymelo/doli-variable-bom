@@ -53,7 +53,7 @@ class modVariableBom extends DolibarrModules
 		$this->description = "Variable BOM: one BOM for all the variants of a product, resolved for each variant to produce";
 		$this->editor_name = 'Zach Melo';
 		$this->editor_url = 'https://zachmelo.com';
-		$this->version = '1.1.0';
+		$this->version = '1.2.0';
 		$this->const_name = 'MAIN_MODULE_'.strtoupper($this->name);
 		$this->picto = 'bom';
 
