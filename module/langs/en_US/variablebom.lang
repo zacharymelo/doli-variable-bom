@@ -12,6 +12,24 @@ VariableBom = Variable BOM
 VariableBomSetup = Variable BOM setup
 VariableBomSetupDesc = A variable BOM is a BOM of a parent product with variants. Its lines flagged "Matched to variant" use a parent product with variants, and the variant consumed is resolved from the variant to produce.
 VariableBomTab = Variants
+VariableBomHelp = The product of this BOM has variants. One manufacturing order can be created for each variant: the lines marked "Matched to variant" are replaced by the matching variant of their component. Open the Variants tab to set the rules and check every variant.
+VariableBomHowTo = How to use
+VariableBomHowTo1 = Create a BOM for the parent product that has variants (for example "Shirt", not "Shirt L Red").
+VariableBomHowTo2 = Add the lines. For a component that exists in variants (a blank tee in every size and color), add its parent product and tick "Matched to variant": the manufacturing order will consume the variant with the same attribute values as the shirt produced.
+VariableBomHowTo3 = Open the Variants tab of the BOM. Set a fixed value for an attribute the produced product does not have (for example the weight of a thread), and quantities that depend on an attribute (more ink for size L). The tab shows for how many variants each line can be resolved.
+VariableBomHowTo4 = Validate the BOM and click "Create MO". Choose the variant to produce with the attribute selects; the components that will be consumed are listed below them.
+VariableBomHowTo5 = The hook of the core (see below) must be available, otherwise manufacturing orders of variable BOMs are refused.
+VariableBomTabIntro = This BOM produces a product with variants. Each manufacturing order produces one variant; this tab defines how the lines are adapted to it:
+VariableBomTabStep1 = A line "Matched to variant" (ticked on the BOM card) consumes the variant of its component with the same attribute values as the variant produced.
+VariableBomTabStep2 = For an attribute of the component that the produced product does not have, set a fixed value in the rules of the line (pencil).
+VariableBomTabStep3 = The quantity of any line can depend on one attribute of the variant produced (0 = the line is not used for that value).
+VariableBomTabStep4 = "Resolution" tells for how many variants the line can be resolved. All lines must reach all variants before creating manufacturing orders.
+VariableBomRulesHelp = Fixed attribute values and quantities by variant defined for the line. Click the pencil at the end of the row to edit them.
+VariableBomResolutionHelp = Number of variants to produce for which the component of this line can be found. If some are missing, open the rules of the line: an attribute may need a fixed value, or the component may not exist in that variant.
+VariableBomQtyByVariantHelp = Choose the attribute of the produced product that changes the quantity, then enter a quantity for each of its values. Empty = the quantity of the line, 0 = the line is not used for that value.
+VariableBomPreviewHelp = What this line becomes for each variant of the product to produce, with the rules above. Check it before validating the BOM.
+VariableBomLineNotMatchedNote = This line is not matched to variant: the same product is consumed for every variant, only its quantity can change. To consume a variant of it instead, edit the line on the BOM card and tick "Matched to variant".
+VariableBomVariantToProduceHelp = Choose one value for each attribute. The product to produce is set automatically, and the components that will be consumed are listed below.
 VariableBomSuffix = (Variable BOM)
 
 # Core hook
@@ -24,7 +42,7 @@ ErrorVariableBomCoreHookMissing = Your Dolibarr version does not have the hook p
 VariableBomNbVariants = Yes, for %s variants
 VariableBomNotVariable = This BOM is not a variable BOM: its product to produce has no variants.
 VariableBomLineMatch = Matched to variant
-VariableBomLineMatchHelp = The product of the line is a parent product with variants. When a manufacturing order is created, the variant consumed is the one having the same attribute values as the variant to produce (or the fixed values defined in the variant rules of the line).
+VariableBomLineMatchHelp = Tick when the product of the line exists in variants (e.g. a blank tee in every size and color): the manufacturing order consumes the variant with the same attribute values as the variant produced. The product of the line must be the parent product, not one of its variants. Rules per attribute are set in the Variants tab.
 VariableBomLines = Lines of the BOM (for %s variants to produce)
 VariableBomRules = Variant rules
 VariableBomRulesOfLine = Variant rules of line

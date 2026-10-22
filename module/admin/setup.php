@@ -72,6 +72,13 @@ print dol_get_fiche_head($head, 'settings', '', -1, 'bom');
 
 print '<span class="opacitymedium">'.$langs->trans('VariableBomSetupDesc').'</span><br><br>';
 
+print load_fiche_titre($langs->trans('VariableBomHowTo'), '', '');
+print '<ol>';
+foreach (array('VariableBomHowTo1', 'VariableBomHowTo2', 'VariableBomHowTo3', 'VariableBomHowTo4', 'VariableBomHowTo5') as $step) {
+	print '<li>'.$langs->trans($step).'</li>';
+}
+print '</ol><br>';
+
 print '<div class="div-table-responsive-no-min">';
 print '<table class="noborder centpercent">';
 print '<tr class="liste_titre"><td>'.$langs->trans('Parameter').'</td><td>'.$langs->trans('Value').'</td><td></td></tr>';

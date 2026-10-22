@@ -200,6 +200,14 @@ if (!VariableBomResolver::isCoreHookAvailable()) {
 	print '<div class="warning">'.img_warning().' '.$langs->trans('ErrorVariableBomCoreHookMissing').'</div><br>';
 }
 
+// How the tab works
+print '<div class="opacitymedium">'.$langs->trans('VariableBomTabIntro').'</div>';
+print '<ol class="opacitymedium">';
+foreach (array('VariableBomTabStep1', 'VariableBomTabStep2', 'VariableBomTabStep3', 'VariableBomTabStep4') as $step) {
+	print '<li>'.$langs->trans($step).'</li>';
+}
+print '</ol>';
+
 // Load in one request the products of the lines and of the variants to produce, to show them
 $productids = array();
 foreach ($object->lines as $tmpline) {
@@ -248,8 +256,8 @@ print '<tr class="liste_titre">';
 print '<td>'.$langs->trans('Product').'</td>';
 print '<td class="right">'.$langs->trans('Qty').'</td>';
 print '<td class="center">'.$form->textwithpicto($langs->trans('VariableBomLineMatch'), $langs->trans('VariableBomLineMatchHelp')).'</td>';
-print '<td>'.$langs->trans('VariableBomRules').'</td>';
-print '<td>'.$langs->trans('VariableBomResolution').'</td>';
+print '<td>'.$form->textwithpicto($langs->trans('VariableBomRules'), $langs->trans('VariableBomRulesHelp')).'</td>';
+print '<td>'.$form->textwithpicto($langs->trans('VariableBomResolution'), $langs->trans('VariableBomResolutionHelp')).'</td>';
 print '<td></td>';
 print '</tr>';
 foreach ($object->lines as $tmpline) {
@@ -330,10 +338,14 @@ if (!empty($matchedlineids[$line->id])) {
 	print '<br>';
 }
 
+if (empty($matchedlineids[$line->id])) {
+	print '<div class="opacitymedium">'.$langs->trans('VariableBomLineNotMatchedNote').'</div><br>';
+}
+
 // Quantity by variant
 print '<div class="div-table-responsive-no-min">';
 print '<table class="noborder centpercent">';
-print '<tr class="liste_titre"><td class="titlefieldmiddle">'.$langs->trans('VariableBomQtyByVariant').'</td><td>';
+print '<tr class="liste_titre"><td class="titlefieldmiddle">'.$form->textwithpicto($langs->trans('VariableBomQtyByVariant'), $langs->trans('VariableBomQtyByVariantHelp')).'</td><td>';
 $options = array(0 => $langs->trans('VariableBomQtyNone'));
 foreach ($producedattributes as $attrid => $attribute) {
 	$options[$attrid] = $langs->trans('VariableBomQtyAttribute').' '.$attribute['label'];
@@ -361,7 +373,7 @@ print '</form>';
 
 // Result for each variant to produce
 print '<br>';
-print load_fiche_titre($langs->trans('VariableBomPreview'), '', '');
+print load_fiche_titre($form->textwithpicto($langs->trans('VariableBomPreview'), $langs->trans('VariableBomPreviewHelp')), '', '');
 
 print '<div class="div-table-responsive-no-min">';
 print '<table class="noborder centpercent">';

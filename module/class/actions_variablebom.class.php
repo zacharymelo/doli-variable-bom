@@ -118,6 +118,8 @@ class ActionsVariableBom
 		$contexts = explode(':', $parameters['context']);
 		$langs->load('variablebom@variablebom');
 		$resolver = new VariableBomResolver($this->db);
+		require_once DOL_DOCUMENT_ROOT.'/core/class/html.form.class.php';
+		$form = new Form($this->db);
 
 		if (in_array('mocard', $contexts) && $action == 'create') {
 			// Ids of the variable BOMs, so the script of the module can flag them into the select of BOMs
@@ -134,7 +136,7 @@ class ActionsVariableBom
 			$variants = $resolver->getVariantCombinations($bom->fk_product);
 			$selected = (empty($variants[GETPOSTINT('fk_product')]) ? array() : $variants[GETPOSTINT('fk_product')]);
 
-			$out = '<tr class="variablebom_variant"><td class="fieldrequired tdtop">'.$langs->trans('VariableBomVariantToProduce').'</td><td>';
+			$out = '<tr class="variablebom_variant"><td class="fieldrequired tdtop">'.$form->textwithpicto($langs->trans('VariableBomVariantToProduce'), $langs->trans('VariableBomVariantToProduceHelp')).'</td><td>';
 			$out .= '<span class="variablebom_selector" data-url="'.dolPrintHTMLForAttributeUrl(dol_buildpath('/variablebom/ajax/resolve.php', 1)).'" data-bom="'.((int) $bom->id).'" data-help="'.dolPrintHTMLForAttribute($langs->transnoentities('VariableBomSelectVariant')).'">';
 			foreach ($resolver->getVariantAttributes($bom->fk_product) as $attrid => $attribute) {
 				$out .= '<select class="flat minwidth100 variablebom_attr" data-attr="'.((int) $attrid).'" title="'.dolPrintHTMLForAttribute($attribute['label']).'">';
@@ -157,7 +159,7 @@ class ActionsVariableBom
 				return 0;
 			}
 			$url = dol_buildpath('/variablebom/bom_variants.php', 1).'?id='.((int) $object->id);
-			$this->resprints = '<tr><td>'.$langs->trans('VariableBom').'</td><td>';
+			$this->resprints = '<tr><td>'.$form->textwithpicto($langs->trans('VariableBom'), $langs->trans('VariableBomHelp')).'</td><td>';
 			$this->resprints .= '<a href="'.dolPrintHTMLForAttributeUrl($url).'">'.$langs->trans('VariableBomNbVariants', count($resolver->getVariantCombinations($object->fk_product))).'</a>';
 			$this->resprints .= '</td></tr>';
 		}
