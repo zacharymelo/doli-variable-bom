@@ -37,8 +37,14 @@ Typical case: a screen-printed T-shirt sold in every Size × Color. One BOM of t
    ```bash
    php core-patch/apply_hook.php /path/to/dolibarr/htdocs
    ```
-   The script is idempotent and saves the original file as `mrp/class/mo.class.php.orig`. Git users can instead apply
-   `core-patch/processBOMLines-24.0.patch` (or `-develop.patch`).
+   The script is idempotent, upgrades the previous version of the hook (module 1.0.0) and keeps the original file as
+   `mrp/class/mo.class.php.orig`. Git users can instead apply `core-patch/processBOMLines-24.0.patch` (or `-develop.patch`).
+
+   What the hook changes in the core, so you can judge it before patching: `Mo::processBOM()` gets a hook call
+   (`processBOMLines`, context `modao`) before it processes the lines of a BOM, guarded by `is_object($hookmanager)`;
+   a protected property `fk_product_bom_processed` tells the hook which product a sub BOM produces (no method signature
+   change); the contract of the hook is documented in the method docblock. Like every hook, it adds `modao` to the hook
+   contexts of the request, and a module returning an error stops the creation of the MO.
 2. Copy the `module` directory to `htdocs/custom/variablebom` (or upload the zip in Home > Setup > Modules > Deploy external module).
 3. Enable **Variable BOM** in Home > Setup > Modules.
 
