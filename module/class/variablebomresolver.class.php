@@ -156,6 +156,35 @@ class VariableBomResolver
 	}
 
 	/**
+	 * Return the ids of the validated BOMs that are variable BOMs (their product to produce has variants).
+	 *
+	 * @return	int[]	Ids of BOMs
+	 */
+	public function getVariableBomIds()
+	{
+		$ids = array();
+
+		$sql = "SELECT DISTINCT b.rowid";
+		$sql .= " FROM ".$this->db->prefix()."bom_bom as b";
+		$sql .= " INNER JOIN ".$this->db->prefix()."product_attribute_combination as c ON c.fk_product_parent = b.fk_product";
+		$sql .= " WHERE b.status = ".((int) BOM::STATUS_VALIDATED);
+		$sql .= " AND b.entity IN (".getEntity('bom').")";
+		$sql .= " AND c.entity IN (".getEntity('product').")";
+
+		$resql = $this->db->query($sql);
+		if ($resql) {
+			while ($obj = $this->db->fetch_object($resql)) {
+				$ids[] = (int) $obj->rowid;
+			}
+			$this->db->free($resql);
+		} else {
+			dol_syslog(__METHOD__.' '.$this->db->lasterror(), LOG_ERR);
+		}
+
+		return $ids;
+	}
+
+	/**
 	 * Return the attributes, with their values, used by the variants of a parent product.
 	 *
 	 * @param	int		$fk_product_parent	Id of parent product

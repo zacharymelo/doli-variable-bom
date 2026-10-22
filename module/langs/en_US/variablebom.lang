@@ -12,6 +12,7 @@ VariableBom = Variable BOM
 VariableBomSetup = Variable BOM setup
 VariableBomSetupDesc = A variable BOM is a BOM of a parent product with variants. Its lines flagged "Matched to variant" use a parent product with variants, and the variant consumed is resolved from the variant to produce.
 VariableBomTab = Variants
+VariableBomSuffix = (Variable BOM)
 
 # Core hook
 VariableBomCoreHook = Hook processBOMLines of Dolibarr core

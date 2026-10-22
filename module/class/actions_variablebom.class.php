@@ -119,7 +119,13 @@ class ActionsVariableBom
 		$langs->load('variablebom@variablebom');
 		$resolver = new VariableBomResolver($this->db);
 
-		if (in_array('mocard', $contexts) && $action == 'create' && GETPOSTINT('fk_bom') > 0) {
+		if (in_array('mocard', $contexts) && $action == 'create') {
+			// Ids of the variable BOMs, so the script of the module can flag them into the select of BOMs
+			$this->resprints = '<span class="variablebom_boms" data-ids="'.dolPrintHTMLForAttribute(implode(',', $resolver->getVariableBomIds())).'" data-suffix="'.dolPrintHTMLForAttribute($langs->transnoentities('VariableBomSuffix')).'"></span>';
+
+			if (GETPOSTINT('fk_bom') <= 0) {
+				return 0;
+			}
 			$bom = new BOM($this->db);
 			if ($bom->fetch(GETPOSTINT('fk_bom')) <= 0 || !$resolver->isVariable($bom)) {
 				return 0;
@@ -142,7 +148,7 @@ class ActionsVariableBom
 			$out .= '<div class="variablebom_resolved opacitymedium">'.$langs->trans('VariableBomSelectVariant').'</div>';
 			$out .= '</td></tr>';
 
-			$this->resprints = $out;
+			$this->resprints .= $out;
 			return 0;
 		}
 

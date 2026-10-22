@@ -75,6 +75,25 @@ jQuery(function ($) {
 		}
 	}
 
+	// MO creation: flag the variable BOMs into the select of BOMs (labels are built by the core from ref and label)
+	var $boms = $('.variablebom_boms');
+	if ($boms.length && $('#fk_bom').length) {
+		var suffix = ' ' + $boms.data('suffix');
+		$.each(String($boms.data('ids')).split(','), function (i, id) {
+			var $option = $('#fk_bom option[value="' + id + '"]');
+			if ($option.length && $option.text().indexOf(suffix) < 0) {
+				$option.text($option.text() + suffix);
+				// The list is rendered from the attribute data-html, and select2 caches an option under the id it stamps on it
+				if ($option.attr('data-html')) {
+					$option.attr('data-html', $option.attr('data-html') + $('<div>').text(suffix).html());
+				}
+				$option.removeAttr('data-select2-id').removeData('data');
+			}
+		});
+		// Refresh the text shown by select2 without firing the change handlers of the page
+		$('#fk_bom').trigger('change.select2');
+	}
+
 	$('select.variablebom_qtyattr').on('change', function () {
 		$('.variablebom_qty').hide();
 		$('.variablebom_qty_' + $(this).val()).show();
