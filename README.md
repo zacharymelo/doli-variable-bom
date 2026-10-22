@@ -74,7 +74,9 @@ The module refuses to tick a line whose product has no variants, or on a BOM who
 The **Variants** tab lists every line with its rules and a **Resolution** badge: green `6 / 6` when the line can be
 resolved for every variant to produce, orange when some cannot. The folder icon in front of a line unfolds what that line
 becomes for each variant (the links above the table unfold or fold them all). Click the pencil at the end of a row to
-edit the line's rules in place, with Save and Cancel right there, like a document line.
+edit the line's rules in place, with Save and Cancel right there, like a document line. As with the BOM's own lines, the
+rules can only be edited while the BOM is in **Draft**: on a validated BOM the tab says so and shows them read-only
+(click "Back to draft" on the BOM card to change them, then validate again).
 
 ![Variants tab](docs/variants-tab.jpg)
 

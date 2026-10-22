@@ -264,6 +264,15 @@ foreach (array_keys($products) as $tmpid) {
 	}
 }
 
+// Why the rules can not be edited
+if (!$permissiontoadd) {
+	if ($object->status != $object::STATUS_DRAFT) {
+		print '<div class="info">'.$langs->trans('VariableBomReadOnlyValidated', '<a href="'.DOL_URL_ROOT.'/bom/bom_card.php?id='.((int) $object->id).'">'.$langs->trans('BillOfMaterials').'</a>').'</div>';
+	} else {
+		print '<div class="info">'.$langs->trans('VariableBomReadOnlyNoPermission').'</div>';
+	}
+}
+
 $morehtmlright = '<a href="#" class="variablebom_showall">'.img_picto('', 'folder-open', 'class="paddingright"').$langs->trans('VariableBomShowAllResults').'</a>';
 $morehtmlright .= ' &nbsp; <a href="#" class="variablebom_hideall">'.img_picto('', 'folder', 'class="paddingright"').$langs->trans('VariableBomHideAllResults').'</a>';
 print load_fiche_titre($langs->trans('VariableBomLines', count($variants)), $morehtmlright, '');
