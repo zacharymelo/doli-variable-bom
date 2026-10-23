@@ -159,7 +159,7 @@ class ActionsVariableBom
 				return 0;
 			}
 			$url = dol_buildpath('/variablebom/bom_variants.php', 1).'?id='.((int) $object->id);
-			$this->resprints = '<tr><td>'.$form->textwithpicto($langs->trans('VariableBom'), $langs->trans('VariableBomHelp')).'</td><td>';
+			$this->resprints = '<tr><td>'.$form->textwithpicto($langs->trans('VariableBomTab'), $langs->trans('VariableBomHelp')).'</td><td>';
 			$this->resprints .= '<a href="'.dolPrintHTMLForAttributeUrl($url).'">'.$langs->trans('VariableBomNbVariants', count($resolver->getVariantCombinations($object->fk_product))).'</a>';
 			$this->resprints .= '</td></tr>';
 		}

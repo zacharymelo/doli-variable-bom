@@ -82,6 +82,21 @@ class InterfaceVariableBomTrigger extends DolibarrTriggers
 		}
 
 		switch ($action) {
+			case 'BOM_CREATE':
+			case 'BOM_MODIFY':
+				// The flag "Variable BOM" needs a product to produce with variants
+				if (!empty($object->array_options['options_variablebom_variable'])) {
+					dol_include_once('/variablebom/class/variablebomresolver.class.php');
+					$resolver = new VariableBomResolver($this->db);
+					if (count($resolver->getVariantCombinations($object->fk_product)) == 0) {
+						$langs->load('variablebom@variablebom');
+						$this->errors[] = $langs->trans('ErrorVariableBomFlagNeedsVariants');
+						return -1;
+					}
+					return 1;
+				}
+				break;
+
 			case 'BOMLINE_CREATE':
 			case 'BOMLINE_MODIFY':
 				// A line matched to variant must use a variant parent product into a variable BOM

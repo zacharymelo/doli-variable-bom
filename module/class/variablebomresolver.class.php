@@ -40,6 +40,11 @@ class VariableBomResolver
 	const EXTRAFIELD_MATCH = 'variablebom_match';
 
 	/**
+	 * Name of the extrafield of BOMs that flags a BOM as variable (created by modVariableBom::init())
+	 */
+	const EXTRAFIELD_VARIABLE = 'variablebom_variable';
+
+	/**
 	 * @var DoliDB Database handler
 	 */
 	public $db;
@@ -79,6 +84,11 @@ class VariableBomResolver
 	 */
 	private $cache_refs = array();
 
+	/**
+	 * @var array<int,bool>	Flag "Variable BOM" per BOM
+	 */
+	private $cache_flags = array();
+
 
 	/**
 	 * Constructor
@@ -106,14 +116,37 @@ class VariableBomResolver
 	}
 
 	/**
-	 * Return if a BOM is a variable BOM, so if its product to produce is a parent product with variants.
+	 * Return if a BOM is flagged "Variable BOM" (extrafield of the BOM, ticked by the user).
+	 *
+	 * @param	BOM		$bom	BOM
+	 * @return	bool			True if flagged
+	 */
+	public function isFlagged(BOM $bom)
+	{
+		if (empty($bom->id)) {
+			return !empty($bom->array_options['options_'.self::EXTRAFIELD_VARIABLE]);
+		}
+		if (!isset($this->cache_flags[$bom->id])) {
+			if (isset($bom->array_options['options_'.self::EXTRAFIELD_VARIABLE])) {
+				$this->cache_flags[$bom->id] = !empty($bom->array_options['options_'.self::EXTRAFIELD_VARIABLE]);
+			} else {
+				$obj = $this->db->getRow("SELECT ".self::EXTRAFIELD_VARIABLE." as flag FROM ".$this->db->prefix()."bom_bom_extrafields WHERE fk_object = ".((int) $bom->id));
+				$this->cache_flags[$bom->id] = (is_object($obj) && !empty($obj->flag));
+			}
+		}
+
+		return $this->cache_flags[$bom->id];
+	}
+
+	/**
+	 * Return if a BOM is a variable BOM: flagged "Variable BOM" and its product to produce has variants.
 	 *
 	 * @param	BOM		$bom	BOM
 	 * @return	bool			True if variable BOM
 	 */
 	public function isVariable(BOM $bom)
 	{
-		if (!isModEnabled('variants') || empty($bom->fk_product)) {
+		if (!isModEnabled('variants') || empty($bom->fk_product) || !$this->isFlagged($bom)) {
 			return false;
 		}
 
@@ -156,7 +189,7 @@ class VariableBomResolver
 	}
 
 	/**
-	 * Return the ids of the validated BOMs that are variable BOMs (their product to produce has variants).
+	 * Return the ids of the validated BOMs that are variable BOMs (flagged, and their product to produce has variants).
 	 *
 	 * @return	int[]	Ids of BOMs
 	 */
@@ -166,6 +199,7 @@ class VariableBomResolver
 
 		$sql = "SELECT DISTINCT b.rowid";
 		$sql .= " FROM ".$this->db->prefix()."bom_bom as b";
+		$sql .= " INNER JOIN ".$this->db->prefix()."bom_bom_extrafields as ef ON ef.fk_object = b.rowid AND ef.".self::EXTRAFIELD_VARIABLE." = 1";
 		$sql .= " INNER JOIN ".$this->db->prefix()."product_attribute_combination as c ON c.fk_product_parent = b.fk_product";
 		$sql .= " WHERE b.status = ".((int) BOM::STATUS_VALIDATED);
 		$sql .= " AND b.entity IN (".getEntity('bom').")";

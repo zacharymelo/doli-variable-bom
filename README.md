@@ -53,8 +53,13 @@ Open its setup page (the gear icon next to the module). It shows **How to use** 
 
 ### 2.1 Create the BOM on the parent product
 
-Create a BOM as usual, but choose the **parent** product, the one that has variants ("Shirt", not "Shirt L Red").
-The BOM card then shows **Variable BOM: Yes, for N variants**, with a link to the Variants tab.
+Create a BOM as usual, but choose the **parent** product, the one that has variants ("Shirt", not "Shirt L Red"), and
+tick **Variable BOM** on it. The module refuses the tick on a product without variants. The BOM card then shows the
+number of variants to produce, with a link to the Variants tab.
+
+A BOM on a parent product that is **not** ticked behaves exactly as in standard Dolibarr: it produces the parent
+product itself, and its lines cannot be matched to variant. (When upgrading from a version of the module without this
+checkbox, BOMs whose product has variants are ticked automatically once, so nothing changes for them.)
 
 ### 2.2 Add the lines, and tick "Matched to variant" where the component has variants
 

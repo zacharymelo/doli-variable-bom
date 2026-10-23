@@ -33,6 +33,11 @@ class modVariableBom extends DolibarrModules
 	const EXTRAFIELD_MATCH = 'variablebom_match';
 
 	/**
+	 * Name of the extrafield of BOMs that flags a BOM as variable
+	 */
+	const EXTRAFIELD_VARIABLE = 'variablebom_variable';
+
+	/**
 	 * Constructor. Define names, constants, directories, boxes, permissions
 	 *
 	 * @param DoliDB $db Database handler
@@ -118,6 +123,27 @@ class modVariableBom extends DolibarrModules
 		if ($result < 0) {
 			$this->error = $extrafields->error;
 			return -1;
+		}
+		$result = $extrafields->addExtraField(self::EXTRAFIELD_VARIABLE, 'VariableBomFlag', 'boolean', 1000, '', 'bom_bom', 0, 0, '', '', 0, '', '1', 'VariableBomFlagHelp', '', '0', 'variablebom@variablebom', 'isModEnabled("variablebom")');
+		if ($result < 0) {
+			$this->error = $extrafields->error;
+			return -1;
+		}
+
+		// Once: flag the BOMs that were variable before the flag existed (product with variants), so nothing changes for them
+		if (!getDolGlobalInt('VARIABLEBOM_FLAG_MIGRATED')) {
+			$where = "EXISTS (SELECT c.rowid FROM ".$this->db->prefix()."product_attribute_combination as c WHERE c.fk_product_parent = b.fk_product)";
+			$sqls = array(
+				"INSERT INTO ".$this->db->prefix()."bom_bom_extrafields (fk_object, ".self::EXTRAFIELD_VARIABLE.") SELECT b.rowid, 1 FROM ".$this->db->prefix()."bom_bom as b WHERE ".$where." AND NOT EXISTS (SELECT ef.rowid FROM ".$this->db->prefix()."bom_bom_extrafields as ef WHERE ef.fk_object = b.rowid)",
+				"UPDATE ".$this->db->prefix()."bom_bom_extrafields SET ".self::EXTRAFIELD_VARIABLE." = 1 WHERE ".self::EXTRAFIELD_VARIABLE." IS NULL AND fk_object IN (SELECT b.rowid FROM ".$this->db->prefix()."bom_bom as b WHERE ".$where.")",
+			);
+			foreach ($sqls as $sql) {
+				if (!$this->db->query($sql)) {
+					$this->error = $this->db->lasterror();
+					return -1;
+				}
+			}
+			dolibarr_set_const($this->db, 'VARIABLEBOM_FLAG_MIGRATED', 1, 'chaine', 0, 'Existing variable BOMs flagged at first activation of the flag', 0);
 		}
 
 		$this->delete_menus();
