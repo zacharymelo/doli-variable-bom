@@ -41,7 +41,7 @@ class InterfaceVariableBomTrigger extends DolibarrTriggers
 		$this->name = preg_replace('/^Interface/i', '', get_class($this));
 		$this->family = "products";
 		$this->description = "Triggers of module VariableBom";
-		$this->version = '1.2.0';
+		$this->version = '1.3.0';
 		$this->picto = 'bom';
 	}
 
